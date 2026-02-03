@@ -1,0 +1,16 @@
+{
+  "name": "data-group-plugin",
+  "description": "Claude Code plugin collection for the data group team",
+  "version": "1.0.0",
+  "owner": {
+    "name": "DeweyLee47",
+    "url": "https://github.com/DeweyLee47"
+  },
+  "plugins": [
+    {
+      "name": "event-taxonomy",
+      "source": "./event-taxonomy",
+      "description": "Event taxonomy management and synchronization tools"
+    }
+  ]
+}
