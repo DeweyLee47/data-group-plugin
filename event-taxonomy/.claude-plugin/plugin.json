@@ -1,0 +1,9 @@
+{
+  "name": "event-taxonomy",
+  "description": "Event taxonomy management and synchronization tools",
+  "version": "1.0.0",
+  "author": {
+    "name": "DeweyLee47",
+    "url": "https://github.com/DeweyLee47"
+  }
+}
