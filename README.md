@@ -29,7 +29,7 @@ Install a specific protocol:
 Once installed, invoke protocols using the slash command:
 
 ```bash
-/event-taxonomy [notion-url]
+/sync-taxonomy-events [notion-url]
 ```
 
 ## For Contributors

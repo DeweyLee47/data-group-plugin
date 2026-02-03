@@ -1,5 +1,5 @@
 ---
-name: event-taxonomy
+name: sync-taxonomy-events
 description: This skill should be used when the user asks to "sync events to taxonomy", "update Aqueduct taxonomy", "add events from Change History", or provides a Notion Event Change History URL (e.g., notion.so/droomws/...). Syncs events, screens, and properties from Event Change History pages to Aqueduct Taxonomy databases.
 argument-hint: [notion-url]
 user-invocable: true
