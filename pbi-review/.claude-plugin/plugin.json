@@ -1,0 +1,9 @@
+{
+  "name": "pbi-review",
+  "description": "PBI (Product Backlog Item) review skill with content-level critique patterns",
+  "version": "1.0.0",
+  "author": {
+    "name": "data-group",
+    "url": "https://github.com/delightroom"
+  }
+}
