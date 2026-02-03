@@ -24,6 +24,15 @@ Install a specific protocol:
 |----------|-------------|
 | `event-taxonomy` | Event taxonomy management and synchronization tools |
 
+## Prerequisites
+
+### sync-taxonomy-events
+
+Requires the following MCP servers to be configured:
+
+- **Notion MCP** - For reading Event Change History and writing to Aqueduct Taxonomy
+- **Figma MCP** - For fetching design links
+
 ## Usage
 
 Once installed, invoke protocols using the slash command:
