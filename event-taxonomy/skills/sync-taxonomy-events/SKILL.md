@@ -109,19 +109,45 @@ See `references/field-mappings.md` for detailed body update patterns.
 
 ### Step 5: Sync Events
 
-For each event from source:
+For each event from source 이벤트 database:
+
+**5.1 Extract source relations from the event record:**
+- Get `스크린 이름` field (screen relation) from source event
+- Get `이벤트 프로퍼티` field (property relations) from source event
+- These are relation fields that return page references
+
+**5.2 Resolve to property/screen names:**
+- For screen in source `스크린 이름`: extract the screen name text
+- For each property in source `이벤트 프로퍼티`: extract the property name (프로퍼티 이름)
+
+**5.3 Look up Aqueduct URLs from maps built in Steps 3-4:**
+- `screen_url = screenUrlMap[extracted_screen_name]`
+- `property_urls = [propertyUrlMap[name] for each extracted_property_name]`
+
+**5.4 Query existing event in Aqueduct:**
 - Auto-detect event_type from name prefix (`page_view_` → Page View, `tap_`/`click_` → Tap/Click, else → Server/System)
-- Query: `SELECT url, "Event Property New" FROM "Event New" WHERE event_name = '<event_name>'`
-- If not found → Create new event with all fields and relations
-- If found → Check for new properties, update relations if needed
+- Query: `SELECT url, "Event Property New", screen_name FROM "Event New" WHERE event_name = '<event_name>'`
+
+**5.5 Create or update event:**
+- If not found → Create with all fields including `screen_name=[screen_url]`, `Event Property New=property_urls`
+- If found → Merge new property_urls with existing relations, update if changed
 
 **Event fields:**
 - event_name, platform (JSON array), type=["Event"], event_type, description
 - source="Client", Snowplow (if 백엔드 contains "Snowplow")
 
-**Relation fields (MUST use URLs from Steps 3-4, NOT names):**
-- `screen_name`: Use `screenUrlMap[screen_name]` from Step 3
-- `Event Property New`: Use `propertyUrlMap[property_name]` for each property from Step 4
+**Relation fields (extract from source, then map to URLs):**
+
+1. `screen_name` relation:
+   - Source field: `스크린 이름` in source 이벤트 record
+   - Extract screen name text from source relation
+   - Target URL: `screenUrlMap[screen_name]`
+
+2. `Event Property New` relation:
+   - Source field: `이벤트 프로퍼티` in source 이벤트 record
+   - Extract property names from source relation (may be multiple)
+   - Target URLs: `[propertyUrlMap[prop_name] for each property]`
+   - Format as JSON array of URLs for Notion API
 
 > **CRITICAL**: Notion relation fields require page URLs/IDs to link to existing pages.
 > Passing text names to relation fields causes Notion API to create NEW pages instead of linking to existing ones.

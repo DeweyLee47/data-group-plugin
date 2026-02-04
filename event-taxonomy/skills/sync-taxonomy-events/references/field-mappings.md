@@ -13,8 +13,27 @@ Detailed field mappings from Event Change History source to Aqueduct Taxonomy ta
 | - | event_type | Auto-detect from name |
 | - | source | Default "Client" |
 | - | type | Always ["Event"] |
-| 스크린 이름 | screen_name | Relation (lookup/create) |
-| 이벤트 프로퍼티 | Event Property New | Relation (lookup/create) |
+| 스크린 이름 | screen_name | Relation - see Source Relation Extraction |
+| 이벤트 프로퍼티 | Event Property New | Relation - see Source Relation Extraction |
+
+### Source Relation Extraction
+
+The source 이벤트 records contain relation fields that must be extracted and mapped to Aqueduct URLs:
+
+**`스크린 이름` field (Screen relation):**
+- This is a relation field in the source 이벤트 database
+- Contains reference(s) to screen pages in the source 스크린 database
+- Extract the screen name text from the related page
+- Look up the Aqueduct URL: `screenUrlMap[extracted_screen_name]`
+
+**`이벤트 프로퍼티` field (Property relations):**
+- This is a relation field in the source 이벤트 database
+- Contains references to property pages in the source 이벤트 프로퍼티 database
+- May contain multiple property references for a single event
+- For each related property, extract the property name (프로퍼티 이름)
+- Look up Aqueduct URLs: `[propertyUrlMap[name] for each property]`
+
+**Important:** These relations define which properties/screens belong to each specific event. Without extracting them, events would be created without their property/screen links.
 
 ### Event Type Detection Rules
 
