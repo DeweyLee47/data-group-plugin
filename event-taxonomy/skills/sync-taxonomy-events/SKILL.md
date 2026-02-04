@@ -61,15 +61,21 @@ Query these databases to find existing entries:
 
 ### Step 3: Sync Screens
 
+**Maintain a `screenUrlMap` (screen_name → page_url) for use in Step 5.**
+
 For each screen from source:
 - Query: `SELECT url, "Screen Name" FROM "Screen New" WHERE "Screen Name" = '<screen_name>'`
-- If not found → Create with Screen Name, Category (default "K.퀘스트"), Description, Type="Screen", Status="Live"
+- If found → **Store mapping: `screenUrlMap[screen_name] = found_url`**
+- If not found → Create with Screen Name, Category (default "K.퀘스트"), Description, Type="Screen", Status="Live" → **Store mapping: `screenUrlMap[screen_name] = new_page_url`**
 
 ### Step 4: Sync Event Properties
 
+**Maintain a `propertyUrlMap` (property_name → page_url) for use in Step 5.**
+
 For each event property from source:
 - Query: `SELECT url FROM "Event Property New" WHERE "Event Property Name" = '<property_name>'`
-- If not found → Create with Event Property Name, Data_Type (mapped), Description, Type=["Event Property"], Status="Live"
+- If found → **Store mapping: `propertyUrlMap[property_name] = found_url`**
+- If not found → Create with Event Property Name, Data_Type (mapped), Description, Type=["Event Property"], Status="Live" → **Store mapping: `propertyUrlMap[property_name] = new_page_url`**
 
 ### Step 4.5: Update Property Values (Add Value Changes)
 
@@ -109,7 +115,17 @@ For each event from source:
 - If not found → Create new event with all fields and relations
 - If found → Check for new properties, update relations if needed
 
-Event fields: event_name, platform (JSON array), type=["Event"], event_type, description, source="Client", Snowplow (if 백엔드 contains "Snowplow"), screen_name (relation), Event Property New (relations)
+**Event fields:**
+- event_name, platform (JSON array), type=["Event"], event_type, description
+- source="Client", Snowplow (if 백엔드 contains "Snowplow")
+
+**Relation fields (MUST use URLs from Steps 3-4, NOT names):**
+- `screen_name`: Use `screenUrlMap[screen_name]` from Step 3
+- `Event Property New`: Use `propertyUrlMap[property_name]` for each property from Step 4
+
+> **CRITICAL**: Notion relation fields require page URLs/IDs to link to existing pages.
+> Passing text names to relation fields causes Notion API to create NEW pages instead of linking to existing ones.
+> Always look up the URL from the stored mappings before setting relation fields.
 
 ### Step 6: Add Figma Links
 
