@@ -126,6 +126,50 @@ function validateMarketplace() {
   return valid;
 }
 
+function validateSkill(skillsDir, skillFolder) {
+  const skillPath = path.join(skillsDir, skillFolder, 'SKILL.md');
+
+  if (!fs.existsSync(skillPath)) {
+    return fail(`skills/${skillFolder}/SKILL.md not found`);
+  }
+
+  const skillContent = fs.readFileSync(skillPath, 'utf8');
+  const frontmatter = parseFrontmatter(skillContent);
+
+  let valid = true;
+
+  if (!frontmatter) {
+    valid = fail(`skills/${skillFolder}/SKILL.md missing frontmatter (---...---)`) && valid;
+  } else {
+    // Validate frontmatter fields
+    const requiredFrontmatter = ['name', 'description', 'user-invocable', 'allowed-tools'];
+    for (const field of requiredFrontmatter) {
+      if (frontmatter[field] === undefined) {
+        valid = fail(`skills/${skillFolder}/SKILL.md frontmatter missing "${field}"`) && valid;
+      }
+    }
+
+    // Validate skill name matches folder name (not protocol name)
+    if (frontmatter.name !== skillFolder) {
+      warn(`SKILL.md name "${frontmatter.name}" doesn't match folder "${skillFolder}"`);
+    }
+  }
+
+  // Check required sections
+  const requiredSections = ['Definition', 'Phase Transitions'];
+  for (const section of requiredSections) {
+    if (!skillContent.includes(`## ${section}`)) {
+      valid = fail(`skills/${skillFolder}/SKILL.md missing "## ${section}" section`) && valid;
+    }
+  }
+
+  if (valid) {
+    pass(`skills/${skillFolder}/SKILL.md valid`);
+  }
+
+  return valid;
+}
+
 function validateProtocol(protocolDir) {
   const protocolName = path.basename(protocolDir);
   console.log(`\n${colors.bold}Protocol: ${protocolName}${colors.reset}`);
@@ -159,41 +203,24 @@ function validateProtocol(protocolDir) {
     pass(`plugin.json valid (v${pluginJson.version})`);
   }
 
-  // Check SKILL.md
-  const skillPath = path.join(protocolDir, 'skills', protocolName, 'SKILL.md');
-  if (!fs.existsSync(skillPath)) {
-    return fail(`missing skills/${protocolName}/SKILL.md`);
+  // Check skills directory
+  const skillsDir = path.join(protocolDir, 'skills');
+  if (!fs.existsSync(skillsDir)) {
+    return fail('missing skills/ directory');
   }
 
-  const skillContent = fs.readFileSync(skillPath, 'utf8');
-  const frontmatter = parseFrontmatter(skillContent);
+  // Discover skill folders
+  const skillFolders = fs.readdirSync(skillsDir, { withFileTypes: true })
+    .filter(entry => entry.isDirectory())
+    .map(entry => entry.name);
 
-  if (!frontmatter) {
-    valid = fail('SKILL.md missing frontmatter (---...---)') && valid;
-  } else {
-    // Validate frontmatter fields
-    const requiredFrontmatter = ['name', 'description', 'user-invocable', 'allowed-tools'];
-    for (const field of requiredFrontmatter) {
-      if (frontmatter[field] === undefined) {
-        valid = fail(`SKILL.md frontmatter missing "${field}"`) && valid;
-      }
-    }
-
-    if (frontmatter.name !== protocolName) {
-      warn(`SKILL.md name "${frontmatter.name}" doesn't match directory "${protocolName}"`);
-    }
+  if (skillFolders.length === 0) {
+    return fail('no skill folders found in skills/');
   }
 
-  // Check required sections
-  const requiredSections = ['Definition', 'Phase Transitions'];
-  for (const section of requiredSections) {
-    if (!skillContent.includes(`## ${section}`)) {
-      valid = fail(`SKILL.md missing "## ${section}" section`) && valid;
-    }
-  }
-
-  if (valid) {
-    pass('SKILL.md valid');
+  // Validate each discovered skill
+  for (const skillFolder of skillFolders) {
+    valid = validateSkill(skillsDir, skillFolder) && valid;
   }
 
   return valid;

@@ -47,8 +47,8 @@ This protocol activates when:
 For each protocol directory:
 - [ ] `.claude-plugin/plugin.json` exists with valid JSON
 - [ ] Contains required fields: `name`, `description`, `version`
-- [ ] `skills/<protocol-name>/SKILL.md` exists
-- [ ] SKILL.md has valid frontmatter with required fields
+- [ ] `skills/` directory contains at least one skill folder
+- [ ] Each skill folder has a valid `SKILL.md`
 
 ### 3. SKILL.md Validation
 - [ ] Has `name` in frontmatter
@@ -60,7 +60,7 @@ For each protocol directory:
 
 ### 4. Cross-Reference Validation
 - [ ] Protocol name in `plugin.json` matches directory name
-- [ ] Protocol name in SKILL.md matches `plugin.json`
+- [ ] Skill name in SKILL.md matches skill folder name
 - [ ] Marketplace entry matches protocol directory
 
 ## Usage

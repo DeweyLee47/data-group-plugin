@@ -1,6 +1,7 @@
 ---
 name: sync-taxonomy-events
-description: This skill should be used when the user asks to "sync events to taxonomy", "update Aqueduct taxonomy", "add events from Change History", or provides a Notion Event Change History URL (e.g., notion.so/droomws/...). Syncs events, screens, and properties from Event Change History pages to Aqueduct Taxonomy databases.
+description: This skill should be used when the user asks to "sync events to taxonomy", "update Aqueduct taxonomy", "add events from Change History", "sync change history to Aqueduct", "create events from Notion", or provides a Notion Event Change History URL (e.g., notion.so/droomws/...). Syncs events, screens, and properties from Event Change History pages to Aqueduct Taxonomy databases.
+version: 1.0.0
 argument-hint: [notion-url]
 user-invocable: true
 allowed-tools: [Read, Grep, Glob, AskUserQuestion, Task, ToolSearch]
@@ -11,7 +12,7 @@ Sync events from Event Change History Notion page to Aqueduct Taxonomy.
 ## Definition
 
 ```
-FETCH_SOURCE → CHECK_EXISTING → SYNC_SCREENS → SYNC_PROPERTIES → SYNC_EVENTS → ADD_FIGMA → REPORT
+FETCH_SOURCE → CHECK_EXISTING → SYNC_SCREENS → SYNC_PROPERTIES → UPDATE_PROPERTY_VALUES → SYNC_EVENTS → ADD_FIGMA → REPORT
 ```
 
 ## Phase Transitions
@@ -20,9 +21,10 @@ FETCH_SOURCE → CHECK_EXISTING → SYNC_SCREENS → SYNC_PROPERTIES → SYNC_EV
 2. **CHECK_EXISTING**: Query Aqueduct Taxonomy databases for existing entries
 3. **SYNC_SCREENS**: Create missing screens in Screen New database
 4. **SYNC_PROPERTIES**: Create missing event properties in Event Property New database
-5. **SYNC_EVENTS**: Create/update events in Event New database with relations
-6. **ADD_FIGMA**: Add Figma design links to event pages
-7. **REPORT**: Output summary of changes made
+5. **UPDATE_PROPERTY_VALUES**: Update existing properties with new enum values (Add Value changes)
+6. **SYNC_EVENTS**: Create/update events in Event New database with relations
+7. **ADD_FIGMA**: Add Figma design links to event pages
+8. **REPORT**: Output summary of changes made
 
 ## Input
 
@@ -69,6 +71,36 @@ For each event property from source:
 - Query: `SELECT url FROM "Event Property New" WHERE "Event Property Name" = '<property_name>'`
 - If not found → Create with Event Property Name, Data_Type (mapped), Description, Type=["Event Property"], Status="Live"
 
+### Step 4.5: Update Property Values (Add Value Changes)
+
+For existing properties with new enum values:
+
+1. **Detect "Add Value" changes**
+   - Property already exists in Aqueduct Taxonomy (found in Step 4 query)
+   - Source contains new values in "예시 혹은 가능한 값 목록" field
+
+2. **Fetch property page** using `mcp__notion__notion-fetch` to get current content
+
+3. **Update "value 예시" property field**
+   - Use `mcp__notion__notion-update-page` with `update_properties`
+   - Append new values to existing "value 예시" field
+
+4. **Update page body content**
+   - If page has structured sections (e.g., `### 각 Screen별 step_id 정의`):
+     - Use `insert_content_after` to add values under relevant event section
+     - Match existing format: `▶ new_value_name`
+   - If page body is empty or has flat value list:
+     - Add new section with values or append to end of list
+   - Include event context only if values vary by event/screen
+
+5. **Handle body update failures**
+   - If `insert_content_after` fails (e.g., API 500 error):
+     - Continue with sync (don't block on body update failure)
+     - Record the failure for the final report
+   - The "value 예시" property field update is the essential part
+
+See `references/field-mappings.md` for detailed body update patterns.
+
 ### Step 5: Sync Events
 
 For each event from source:
@@ -87,13 +119,16 @@ For each event page created/updated:
 
 ## Clarification Guidelines
 
-**Ask user to clarify when:**
+**Clarify with user when:**
 - Screen category is unclear (not obviously K.퀘스트)
 - Event source is ambiguous (could be Client or Server)
 - Event type cannot be determined from name prefix
 - Multiple Figma links exist and it's unclear which to use
 - Platform field is empty or unclear
 - Property data type mapping is ambiguous (e.g., "enum" type)
+- Property page has complex body structure and insertion point is unclear
+- Multiple events use the same property with different values
+- Existing body format doesn't match expected patterns (▶ value or section-based)
 
 **Example clarification:**
 "The event `reward_granted` doesn't start with `page_view_` or `tap_`. Should this be:
@@ -106,8 +141,17 @@ For each event page created/updated:
 Report summary:
 - Screens: X created, Y skipped (existing)
 - Event Properties: X created, Y skipped (existing)
+- Property Values: X updated (Add Value changes)
 - Events: X created, Y updated, Z skipped
 - Figma links: X added
+
+**Manual Follow-up Required** (if any body update failures):
+
+| Page | Property | Failed Update | Values to Add |
+|------|----------|---------------|---------------|
+| [page_url] | property_name | Body content | value1, value2, ... |
+
+Provide clickable Notion URLs so user can manually update failed body content.
 
 ## Additional Resources
 
